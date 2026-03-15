@@ -208,65 +208,116 @@ with tab1:
                     reset_pipeline()
                     st.rerun()
 
-        # Document list
-        if stats["sources"]:
-            sorted_docs = sorted(stats["sources"].items(), key=lambda x: x[1], reverse=True)
-            doc_options = [f"{name} ({count} chunks)" for name, count in sorted_docs]
-            doc_options.insert(0, "— Select a document —")
+        # Get all PDFs and their status
+        pdf_files = get_pdf_files()
+        indexed_docs = stats["sources"]
 
-            selected_doc = st.radio(
-                "Select:",
-                options=doc_options,
-                index=0 if doc_options else None
+        # Build document list with status
+        doc_list = []
+        for pdf_path in pdf_files:
+            pdf_name = Path(pdf_path).stem
+            chunk_count = indexed_docs.get(pdf_name, 0)
+            is_indexed = chunk_count > 0
+            doc_list.append({
+                "name": pdf_name,
+                "path": pdf_path,
+                "indexed": is_indexed,
+                "chunks": chunk_count
+            })
+
+        # Sort: indexed first, then by name
+        doc_list.sort(key=lambda x: (not x["indexed"], x["name"]))
+
+        # Display document list
+        st.markdown("### 📁 PDF Documents")
+
+        for doc in doc_list:
+            # Status indicator
+            if doc["indexed"]:
+                status = f"✅ Indexed ({doc['chunks']} chunks)"
+                status_color = "green"
+            else:
+                status = "⚪ Not indexed"
+                status_color = "gray"
+
+            # Show document with inline action buttons
+            col_doc1, col_doc2 = st.columns([3, 1])
+
+            with col_doc1:
+                st.write(f"**{doc['name']}**")
+
+            with col_doc2:
+                # Show status and action button
+                if doc["indexed"]:
+                    st.write(f":green[{status}]")
+                    if st.button(f"🔄 Re-index", key=f"reindex_{doc['name']}", use_container_width=True):
+                        with st.spinner("Re-indexing..."):
+                            # Delete existing
+                            delete_document_chunks(pipeline, doc["name"])
+                            # Re-ingest
+                            result = pipeline.ingest_pdf(doc["path"])
+                            reset_pipeline()
+                            st.success(f"Re-indexed: {result.get('chunks', 0)} chunks!")
+                            st.rerun()
+                else:
+                    st.write(f":gray[{status}]")
+                    if st.button(f"📥 Index", key=f"index_{doc['name']}", use_container_width=True):
+                        with st.spinner("Indexing..."):
+                            result = pipeline.ingest_pdf(doc["path"])
+                            reset_pipeline()
+                            st.success(f"Indexed: {result.get('chunks', 0)} chunks!")
+                            st.rerun()
+
+        # Set selected_doc for chunk viewing
+        selected_doc_name = None
+
+        # View chunks section for indexed documents
+        indexed_doc_names = [doc["name"] for doc in doc_list if doc["indexed"]]
+
+        if indexed_doc_names:
+            st.markdown("---")
+            st.markdown("### 🔍 View Document Chunks")
+
+            selected_view_doc = st.selectbox(
+                "Select document to view:",
+                options=indexed_doc_names,
+                key="view_doc_select"
             )
 
-            if selected_doc and selected_doc != "— Select a document —":
-                selected_doc_name = selected_doc.split(" (")[0]
-            else:
-                selected_doc_name = None
-        else:
-            st.info("No documents indexed yet.")
-            selected_doc_name = None
+            if selected_view_doc:
+                chunks = get_document_chunks(pipeline, selected_view_doc)
+                st.write(f"**{len(chunks)} chunks**")
 
-        # Document actions
-        if selected_doc_name:
-            st.markdown("---")
-            st.subheader("🔧 Document Actions")
+                # Filter
+                chunk_types = list(set(c["chunk_type"] for c in chunks))
+                selected_types = st.multiselect(
+                    "Filter by chunk type:",
+                    options=chunk_types,
+                    default=chunk_types,
+                    key="view_filter"
+                )
+                show_full = st.checkbox("Show full content", value=False, key="view_full")
 
-            col_act1, col_act2 = st.columns(2)
+                filtered = [c for c in chunks if c["chunk_type"] in selected_types]
 
-            with col_act1:
-                if st.button("🔄 Re-process", use_container_width=True, help="Delete and recreate chunks + embeddings"):
-                    with st.spinner("Re-processing..."):
-                        # Delete existing
-                        deleted = delete_document_chunks(pipeline, selected_doc_name)
-                        st.info(f"Deleted {deleted} existing chunks")
+                for chunk in filtered:
+                    with st.expander(f"[{chunk['chunk_type']}] Q{chunk['question_number']} - {chunk['topic_hint'] or 'No topic'}", expanded=False):
+                        meta_cols = st.columns(4)
+                        with meta_cols[0]:
+                            st.write(f"**Subject:** {chunk['subject']}")
+                        with meta_cols[1]:
+                            st.write(f"**Year:** {chunk['year']}")
+                        with meta_cols[2]:
+                            st.write(f"**Serie:** {chunk['serie']}")
+                        with meta_cols[3]:
+                            st.write(f"**Section:** {chunk['section']}")
 
-                        # Re-ingest
-                        pdf_path = None
-                        for src, _ in stats["sources"].items():
-                            if src == selected_doc_name:
-                                # Find actual file path
-                                for f in get_pdf_files():
-                                    if selected_doc_name in f:
-                                        pdf_path = f
-                                        break
-
-                        if pdf_path:
-                            result = pipeline.ingest_pdf(pdf_path)
-                            reset_pipeline()
-                            st.success(f"Re-processed: {result.get('chunks', 0)} chunks created!")
-                            st.rerun()
+                        st.markdown("---")
+                        st.write("**Content:**")
+                        if show_full:
+                            st.write(chunk["content"])
                         else:
-                            st.error("PDF file not found!")
-
-            with col_act2:
-                if st.button("🗑️ Delete", use_container_width=True, help="Delete all chunks for this document"):
-                    with st.spinner("Deleting..."):
-                        deleted = delete_document_chunks(pipeline, selected_doc_name)
-                        reset_pipeline()
-                        st.success(f"Deleted {deleted} chunks!")
-                        st.rerun()
+                            st.write(chunk["content"][:500] + "..." if len(chunk["content"]) > 500 else chunk["content"])
 
         # Subject breakdown
         st.markdown("---")
