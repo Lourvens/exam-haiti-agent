@@ -197,9 +197,15 @@ with tab1:
             if st.button("🗑️ Clear All Chunks", use_container_width=True):
                 with st.spinner("Clearing..."):
                     vectorstore = pipeline._get_vectorstore()
-                    vectorstore.delete(where={})
+                    # Get all IDs and delete - Chroma requires explicit IDs
+                    all_docs = vectorstore.get()
+                    all_ids = all_docs.get("ids", [])
+                    if all_ids:
+                        vectorstore.delete(ids=all_ids)
+                        st.success(f"Cleared {len(all_ids)} chunks!")
+                    else:
+                        st.success("Collection already empty!")
                     reset_pipeline()
-                    st.success("All chunks cleared!")
                     st.rerun()
 
         # Document list
