@@ -73,6 +73,8 @@ class Settings(BaseSettings):
     # ===============================
     chunk_max_tokens: int = 1000
     chunk_overlap_tokens: int = 100
+    save_chunks_to_file: bool = True
+    chunks_output_path: Path = Path("data/chunks")
 
     # ===============================
     # Storage

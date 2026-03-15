@@ -167,9 +167,52 @@ class IngestionPipeline:
         self.embedding_model = embedding_model
         self.collection_name = collection_name or settings.chroma_collection_name
         self.persist_directory = persist_directory or str(settings.chroma_persist_directory)
+        self.chunks_dir = str(settings.chunks_output_path)
         self.chunking_engine = LangGraphChunkingEngine(llm_client, verbose=True)
         self._vectorstore = None
         self._embeddings = None
+
+    def _save_chunks_to_file(self, chunks: list, pdf_path: str, pdf_name: str):
+        """Save chunks to a JSON file in data/chunks folder."""
+        import json
+        from pathlib import Path
+
+        chunks_dir = Path(self.chunks_dir)
+        chunks_dir.mkdir(parents=True, exist_ok=True)
+
+        # Convert chunks to serializable format
+        chunks_data = []
+        for i, chunk in enumerate(chunks):
+            try:
+                chunks_data.append({
+                    "index": i,
+                    "chunk_type": str(chunk.chunk_type) if chunk.chunk_type else None,
+                    "content": str(chunk.content) if chunk.content else "",
+                    "subject": str(chunk.subject) if chunk.subject else None,
+                    "year": int(chunk.year) if chunk.year else 0,
+                    "serie": str(chunk.serie) if chunk.serie else None,
+                    "section": str(chunk.section) if chunk.section else None,
+                    "question_number": str(chunk.question_number) if chunk.question_number else None,
+                    "sub_question": str(chunk.sub_question) if chunk.sub_question else None,
+                    "has_formula": bool(chunk.has_formula),
+                    "topic_hint": str(chunk.topic_hint) if chunk.topic_hint else None,
+                    "points": int(chunk.points) if chunk.points else 0
+                })
+            except Exception as e:
+                logger.warning(f"  → Error serializing chunk {i}: {e}")
+                continue
+
+        # Save to JSON file
+        output_file = chunks_dir / f"chunks_{pdf_name}.json"
+        data = {
+            "pdf_path": str(pdf_path),
+            "total_chunks": len(chunks_data),
+            "chunks": chunks_data
+        }
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+        logger.info(f"  → Saved {len(chunks_data)} chunks to {output_file}")
 
     def _get_embeddings(self):
         """Get or create embeddings based on provider configuration."""
@@ -251,6 +294,12 @@ class IngestionPipeline:
         logger.info("Step 1: Chunking PDF...")
         chunks = self.chunking_engine.chunk_pdf(pdf_path)
         logger.info(f"  → Generated {len(chunks)} chunks")
+
+        # Save chunks to file if enabled
+        from app.config import get_settings
+        settings = get_settings()
+        if settings.save_chunks_to_file:
+            self._save_chunks_to_file(chunks, pdf_path, pdf_name)
 
         if not chunks:
             return {
