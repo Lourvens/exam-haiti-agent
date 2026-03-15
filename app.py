@@ -112,27 +112,34 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS for better styling
+# Custom CSS for better styling (works in both light and dark mode)
 st.markdown("""
 <style>
-    .stMetric {
-        background-color: #f0f2f6;
-        padding: 15px;
-        border-radius: 10px;
+    /* Metric cards - use transparent background to inherit theme */
+    div[data-testid="stMetric"] {
+        background-color: transparent;
+        padding: 10px;
+        border-radius: 8px;
     }
+
+    /* Container styling */
     .chunk-card {
-        background-color: #ffffff;
         padding: 15px;
         border-radius: 8px;
-        border: 1px solid #e0e0e0;
+        border: 1px solid rgba(128, 128, 128, 0.3);
         margin-bottom: 10px;
     }
-    .chunk-type-badge {
-        background-color: #4CAF50;
-        color: white;
-        padding: 3px 8px;
-        border-radius: 4px;
-        font-size: 12px;
+
+    /* Adjust text colors for dark mode */
+    @media (prefers-color-scheme: dark) {
+        div[data-testid="stMetric"] {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+    }
+
+    /* Sidebar styling */
+    [data-testid="stRadio"] > div {
+        gap: 8px;
     }
 </style>
 """, unsafe_allow_html=True)
