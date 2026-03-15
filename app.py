@@ -17,21 +17,27 @@ import os
 def get_pipeline():
     """Get or initialize the ingestion pipeline."""
     if "pipeline" not in st.session_state:
-        # Get model from settings, fallback to gpt-4o-mini
+        # Get model from settings
         try:
             from app.config import get_settings
             settings = get_settings()
             model = settings.openai_model
-            # Handle case where model might include provider prefix
-            if "/" in str(model):
-                model = str(model).split("/")[-1]
-        except Exception:
+            base_url = settings.openai_api_base
+            api_key = settings.openai_api_key
+
+            # Remove provider prefix if present (e.g., "openai/gpt-4o-mini" -> "gpt-4o-mini")
+            if model and "/" in str(model):
+                model = str(model).split("/")[-1].strip()
+        except Exception as e:
+            st.error(f"Config error: {e}")
             model = "gpt-4o-mini"
+            base_url = None
+            api_key = os.getenv("OPENAI_API_KEY")
 
         llm = ChatOpenAI(
             model=model,
-            api_key=os.getenv("OPENAI_API_KEY"),
-            base_url=os.getenv("OPENAI_API_BASE") or None
+            api_key=api_key,
+            base_url=base_url
         )
         st.session_state.pipeline = IngestionPipeline(llm_client=llm)
     return st.session_state.pipeline

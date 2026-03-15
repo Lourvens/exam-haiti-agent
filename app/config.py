@@ -32,11 +32,11 @@ class Settings(BaseSettings):
     # ===============================
     # LLM Configuration
     # ===============================
-    llm_provider: Literal["openai", "anthropic", "google", "ollama"] = "openai"
+    llm_provider: str = "openai"
 
     # OpenAI
     openai_api_key: Optional[str] = Field(default=None, validation_alias="OPENAI_API_KEY")
-    openai_model: str = "gpt-4o-mini"
+    openai_model: str = Field(default="gpt-4o-mini", validation_alias="OPENAI_MODEL")
     openai_api_base: Optional[str] = Field(default=None, validation_alias="OPENAI_API_BASE")
 
     # Anthropic
