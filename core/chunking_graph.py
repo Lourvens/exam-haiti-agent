@@ -246,30 +246,10 @@ Return a JSON object with a "chunks" key containing an array of chunks.
                     "retry_count": retry_count + 1
                 }
             else:
-                # Fall back to simple text extraction
-                logger.warning("  → Max retries reached, using simple extraction")
-
-                # Simple fallback - just split by lines
-                lines = section.split("\n")
-                current_chunks = state.get("all_chunks", [])
-
-                for line in lines:
-                    if line.strip() and len(line.strip()) > 10:
-                        current_chunks.append({
-                            "content": line.strip(),
-                            "chunk_type": "other",
-                            "subject": exam.subject if exam else "Unknown",
-                            "year": exam.year if exam else 0,
-                            "serie": exam.serie if exam else "Unknown",
-                        })
-
-                return {
-                    **state,
-                    "all_chunks": current_chunks,
-                    "current_section_index": current_idx + 1,
-                    "retry_count": 0,
-                    "error": None
-                }
+                # Fail with error - don't use fallback
+                error_msg = f"LLM chunking failed after 3 retries: {error_msg}"
+                logger.error(f"  → {error_msg}")
+                raise RuntimeError(error_msg)
 
     def should_continue(state: ChunkingState) -> str:
         """Decide whether to continue processing or end."""

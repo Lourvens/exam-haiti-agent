@@ -17,7 +17,22 @@ import os
 def get_pipeline():
     """Get or initialize the ingestion pipeline."""
     if "pipeline" not in st.session_state:
-        llm = ChatOpenAI(model="gpt-4o-mini", api_key=os.getenv("OPENAI_API_KEY"))
+        # Get model from settings, fallback to gpt-4o-mini
+        try:
+            from app.config import get_settings
+            settings = get_settings()
+            model = settings.openai_model
+            # Handle case where model might include provider prefix
+            if "/" in str(model):
+                model = str(model).split("/")[-1]
+        except Exception:
+            model = "gpt-4o-mini"
+
+        llm = ChatOpenAI(
+            model=model,
+            api_key=os.getenv("OPENAI_API_KEY"),
+            base_url=os.getenv("OPENAI_API_BASE") or None
+        )
         st.session_state.pipeline = IngestionPipeline(llm_client=llm)
     return st.session_state.pipeline
 
@@ -251,22 +266,30 @@ with tab1:
                 if doc["indexed"]:
                     st.write(f":green[{status}]")
                     if st.button(f"🔄 Re-index", key=f"reindex_{doc['name']}", use_container_width=True):
-                        with st.spinner("Re-indexing..."):
-                            # Delete existing
-                            delete_document_chunks(pipeline, doc["name"])
-                            # Re-ingest
-                            result = pipeline.ingest_pdf(doc["path"])
-                            reset_pipeline()
-                            st.success(f"Re-indexed: {result.get('chunks', 0)} chunks!")
-                            st.rerun()
+                        try:
+                            with st.spinner("Re-indexing..."):
+                                # Delete existing
+                                delete_document_chunks(pipeline, doc["name"])
+                                # Re-ingest
+                                result = pipeline.ingest_pdf(doc["path"])
+                                reset_pipeline()
+                                st.success(f"Re-indexed: {result.get('chunks', 0)} chunks!")
+                                st.rerun()
+                        except Exception as e:
+                            st.error(f"Error re-indexing: {str(e)}")
+                            st.info("Check that your LLM model is valid and API key has access.")
                 else:
                     st.write(f":gray[{status}]")
                     if st.button(f"📥 Index", key=f"index_{doc['name']}", use_container_width=True):
-                        with st.spinner("Indexing..."):
-                            result = pipeline.ingest_pdf(doc["path"])
-                            reset_pipeline()
-                            st.success(f"Indexed: {result.get('chunks', 0)} chunks!")
-                            st.rerun()
+                        try:
+                            with st.spinner("Indexing..."):
+                                result = pipeline.ingest_pdf(doc["path"])
+                                reset_pipeline()
+                                st.success(f"Indexed: {result.get('chunks', 0)} chunks!")
+                                st.rerun()
+                        except Exception as e:
+                            st.error(f"Error indexing: {str(e)}")
+                            st.info("Check that your LLM model is valid and API key has access.")
 
         # Set selected_doc for chunk viewing
         selected_doc_name = None
