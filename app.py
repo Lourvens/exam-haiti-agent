@@ -68,7 +68,7 @@ def get_collection_stats(pipeline: IngestionPipeline) -> Dict[str, Any]:
         }
     else:
         return {
-            "total_documents": 0,
+            "total_chunks": 0,
             "unique_documents": 0,
             "sources": {},
             "subjects": {},
