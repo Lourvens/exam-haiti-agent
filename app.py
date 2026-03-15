@@ -24,10 +24,6 @@ def get_pipeline():
             model = settings.openai_model
             base_url = settings.openai_api_base
             api_key = settings.openai_api_key
-
-            # Remove provider prefix if present (e.g., "openai/gpt-4o-mini" -> "gpt-4o-mini")
-            if model and "/" in str(model):
-                model = str(model).split("/")[-1].strip()
         except Exception as e:
             st.error(f"Config error: {e}")
             model = "gpt-4o-mini"
