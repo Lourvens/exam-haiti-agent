@@ -1,15 +1,18 @@
 """LLM-based graph extraction schemas for Neo4j."""
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
 class Entity(BaseModel):
     """Single entity extracted by LLM."""
+
     id: str = Field(description="Unique ID for the entity")
     type: str = Field(description="Entity type: exam, section, question, subquestion, concept, topic")
     name: str = Field(description="Human-readable name")
-    properties: Dict[str, Any] = Field(default_factory=dict, description="Additional properties")
+    # Use str to avoid Groq schema issues - pass properties as JSON string
+    exam_id: Optional[str] = Field(default=None, description="Exam ID")
+    chunk_index: Optional[int] = Field(default=None, description="Chunk index")
 
 
 class Relation(BaseModel):

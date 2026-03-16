@@ -2,7 +2,11 @@
 
 from typing import List, Dict, Any, Optional
 from pathlib import Path
+from dotenv import load_dotenv
 from loguru import logger
+
+# Load env vars BEFORE importing settings
+load_dotenv()
 
 from app.config import get_settings
 from models.graph_nodes import ChunkGraphData
@@ -321,7 +325,9 @@ class Neo4jGraphBuilder:
             props = {
                 "id": entity.id,
                 "name": entity.name,
-                **entity.properties
+                "exam_id": entity.exam_id,
+                "chunk_index": entity.chunk_index,
+                "entity_type": entity.type
             }
 
             # Create node
@@ -547,9 +553,6 @@ def main():
         help="Enable LLM-enhanced graph extraction for additional entities and relationships"
     )
     args = parser.parse_args()
-
-    from dotenv import load_dotenv
-    load_dotenv()
 
     settings = get_settings()
 

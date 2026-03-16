@@ -150,8 +150,8 @@ Focus on extracting meaningful concepts and topics that could help connect this 
 
             for entity in response.entities:
                 # Add exam context to entity
-                entity.properties["exam_id"] = exam_id
-                entity.properties["chunk_index"] = current_idx
+                entity.exam_id = exam_id
+                entity.chunk_index = current_idx
                 current_entities.append(entity)
 
             # Add relations with source/target that include exam context
