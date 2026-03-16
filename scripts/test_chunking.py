@@ -15,13 +15,19 @@ load_dotenv()
 from models.chunk import Chunk
 
 
-def test_chunking(pdf_path: str, model: str = "gpt-4o-mini"):
+def test_chunking(pdf_path: str, model: str = None):
     """Test chunking on a PDF file using LangGraph."""
     from langchain_openai import ChatOpenAI
+    from app.config import get_settings
 
-    # Check for API key
-    api_key = os.getenv("OPENAI_API_KEY")
-    api_base = os.getenv("OPENAI_API_BASE")
+    # Get settings for config
+    settings = get_settings()
+
+    # Use config values if not overridden
+    if model is None:
+        model = settings.openai_model
+    api_key = settings.openai_api_key
+    api_base = settings.openai_api_base
 
     if not api_key:
         print("ERROR: OPENAI_API_KEY not found in environment")
@@ -36,6 +42,7 @@ def test_chunking(pdf_path: str, model: str = "gpt-4o-mini"):
 
     llm = ChatOpenAI(**llm_kwargs)
     print(f"Using model: {model}")
+    print(f"Using base_url: {api_base}")
 
     # Use LangGraph chunking engine
     from core.chunking_graph import LangGraphChunkingEngine
