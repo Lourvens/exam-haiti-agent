@@ -11,6 +11,9 @@ from loguru import logger
 from app.config import settings
 from logs_config.config import setup_logging
 
+# Import admin router (load_dotenv is called inside admin.py)
+from api.admin import router as admin_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -39,6 +42,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include admin router
+app.include_router(admin_router, prefix=settings.api_prefix)
 
 
 # Logging middleware

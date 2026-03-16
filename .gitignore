@@ -17,3 +17,8 @@ logs/
 data/chroma/
 data/chunks/
 data/pdfs/
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/bun.lock

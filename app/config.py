@@ -99,6 +99,11 @@ class Settings(BaseSettings):
     neo4j_enabled: bool = Field(default=False, validation_alias="NEO4J_ENABLED")
 
     # ===============================
+    # Admin
+    # ===============================
+    admin_password: Optional[str] = Field(default=None, validation_alias="ADMIN_PASSWORD")
+
+    # ===============================
     # Computed Properties
     # ===============================
     @property
