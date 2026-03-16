@@ -60,13 +60,60 @@ class GraphQueryTool:
             serie = filters.get("serie")
             topic = filters.get("topic")
 
-            # Search by topic/keyword
-            if topic or query:
+            # Build query based on available filters
+            # Priority: 1) subject/year/serie filters, 2) topic keyword, 3) query
+
+            # If we have subject or year filters, search questions directly
+            if subject or year:
+                # Build cypher query with filters
+                conditions = []
+                params = {}
+
+                if subject:
+                    conditions.append("q.exam_subject CONTAINS $subject")
+                    params["subject"] = subject
+
+                if year:
+                    conditions.append("q.exam_year = $year")
+                    params["year"] = year
+
+                if serie:
+                    conditions.append("q.exam_serie CONTAINS $serie")
+                    params["serie"] = serie
+
+                cypher = f"""
+                    MATCH (q:Question)
+                    WHERE {' AND '.join(conditions)}
+                    RETURN q.id as id, q.number as number, q.topic_hint as topic,
+                           q.content as content, q.chunk_type as chunk_type,
+                           q.exam_subject as subject, q.exam_year as year,
+                           q.exam_serie as serie
+                    ORDER BY q.number
+                    LIMIT 30
+                """
+
+                result = session.run(cypher, **params)
+                for record in result:
+                    results.append({
+                        "type": "question",
+                        "id": record["id"],
+                        "number": record["number"],
+                        "topic": record["topic"],
+                        "content": record["content"],
+                        "chunk_type": record["chunk_type"],
+                        "subject": record["subject"],
+                        "year": record["year"],
+                        "serie": record["serie"]
+                    })
+
+            # If no results from filters, try topic/query search
+            if not results and (topic or query):
                 search_term = topic or query
                 result = session.run("""
                     MATCH (q:Question)
                     WHERE q.topic_hint CONTAINS $search_term
                        OR q.content CONTAINS $search_term
+                       OR q.exam_subject CONTAINS $search_term
                     RETURN q.id as id, q.number as number, q.topic_hint as topic,
                            q.content as content, q.chunk_type as chunk_type,
                            q.exam_subject as subject, q.exam_year as year,
@@ -86,19 +133,7 @@ class GraphQueryTool:
                         "serie": record["serie"]
                     })
 
-            # Filter by subject if specified
-            if subject and results:
-                results = [r for r in results if r.get("subject", "").lower() == subject.lower()]
-
-            # Filter by year if specified
-            if year and results:
-                results = [r for r in results if r.get("year") == year]
-
-            # Filter by serie if specified
-            if serie and results:
-                results = [r for r in results if r.get("serie", "").lower() == serie.lower()]
-
-            # If no topic search, try getting recent exams or sections
+            # If still no results, get recent exams
             if not results:
                 result = session.run("""
                     MATCH (e:Exam)
