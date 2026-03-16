@@ -17,8 +17,8 @@ Extract:
 Return a JSON object with these fields. If not mentioned, use null.
 """
 
-ANSWER_PROMPT = """
-You are an AI assistant for Haitian Baccalaureate exam questions.
+# Basic answer prompt
+ANSWER_PROMPT = """You are an AI assistant for Haitian Baccalaureate exam questions.
 
 User Query: {query}
 
@@ -31,6 +31,23 @@ Provide a helpful answer based on the context. If the context doesn't contain
 relevant information, say so clearly. Be concise but informative.
 """
 
+# LaTeX instructions (plain text, not a template)
+LATEX_INSTRUCTIONS = """
+IMPORTANT FORMATTING RULES:
+1. When showing mathematical formulas or expressions, use LaTeX format:
+   - Inline: $formula$ or (formula)
+   - Display: $$formula$$ or [formula]
+   - Fractions: use frac{num}{denom}
+   - Superscripts: x^2, subscripts: x_2
+
+2. Format examples:
+   - f(x) = x^2 -> $f(x) = x^2$
+   - a/b -> $frac{a}{b}$
+   - e^x -> $e^x$
+
+3. Use markdown tables for structured data when appropriate.
+"""
+
 
 def get_intent_filter_prompt(query: str) -> str:
     """Get the intent filter extraction prompt."""
@@ -38,9 +55,27 @@ def get_intent_filter_prompt(query: str) -> str:
 
 
 def get_answer_prompt(query: str, search_type: str, context: str) -> str:
-    """Get the answer generation prompt."""
+    """Get the basic answer generation prompt."""
     return ANSWER_PROMPT.format(
         query=query,
         search_type=search_type,
         context=context
     )
+
+
+def get_latex_answer_prompt(query: str, search_type: str, context: str) -> str:
+    """Get the LaTeX-enhanced answer prompt."""
+    prompt = f"""You are an AI assistant for Haitian Baccalaureate exam questions.
+
+User Query: {query}
+
+Search Type: {search_type}
+
+Context from knowledge base:
+{context}
+
+{LATEX_INSTRUCTIONS}
+
+Provide a helpful answer based on the context. If the context doesn't contain
+relevant information, say so clearly."""
+    return prompt
