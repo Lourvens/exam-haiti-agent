@@ -70,7 +70,8 @@ class GraphQueryTool:
                 params = {}
 
                 if subject:
-                    conditions.append("q.exam_subject CONTAINS $subject")
+                    # Use OR to match partial subject names (e.g., "Mathématiques" contains "Math")
+                    conditions.append("(q.exam_subject CONTAINS $subject OR $subject CONTAINS q.exam_subject)")
                     params["subject"] = subject
 
                 if year:
@@ -78,7 +79,7 @@ class GraphQueryTool:
                     params["year"] = year
 
                 if serie:
-                    conditions.append("q.exam_serie CONTAINS $serie")
+                    conditions.append("(q.exam_serie CONTAINS $serie OR $serie CONTAINS q.exam_serie)")
                     params["serie"] = serie
 
                 cypher = f"""

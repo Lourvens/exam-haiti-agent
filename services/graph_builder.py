@@ -179,7 +179,10 @@ class Neo4jGraphBuilder:
 
     def _create_question_node(self, tx, exam_id: str, data: ChunkGraphData):
         """Create Question node and relationships."""
+        # Skip sub_question chunks - they create SubQuestion nodes, not Question nodes
         if not data.question_number or not data.question_type:
+            return
+        if data.question_type == "sub_question":
             return
 
         # Determine which section this question belongs to
