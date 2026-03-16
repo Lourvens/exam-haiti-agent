@@ -107,6 +107,39 @@ class Neo4jGraphBuilder:
 
         return exams
 
+    def _normalize_subject(self, subject: str) -> str:
+        """Normalize subject names to a consistent format."""
+        if not subject:
+            return "Unknown"
+
+        subject_lower = subject.lower().strip()
+
+        # Map variations to standard form
+        subject_normalization = {
+            "hist-geo": "Histoire-Géographie",
+            "hist geo": "Histoire-Géographie",
+            "histoire-geo": "Histoire-Géographie",
+            "histoire géo": "Histoire-Géographie",
+            "histoire-geographie": "Histoire-Géographie",
+            "geo": "Histoire-Géographie",
+            "svt": "SVT",
+            "science vie terre": "SVT",
+            "sciences de la vie et de la terre": "SVT",
+            "pc": "Physique-Chimie",
+            "physique": "Physique-Chimie",
+            "chimie": "Physique-Chimie",
+            "math": "Mathématiques",
+            "mathematiques": "Mathématiques",
+        }
+
+        # Check for partial matches
+        for key, value in subject_normalization.items():
+            if key in subject_lower:
+                return value
+
+        # If no match found, return original with proper capitalization
+        return subject
+
     def _convert_chunk_to_graph_data(self, chunk: Dict) -> ChunkGraphData:
         """Convert Chroma chunk to graph data model."""
         meta = chunk["metadata"]
@@ -119,7 +152,8 @@ class Neo4jGraphBuilder:
         # Parse exam ID to get subject, year, serie
         # Format: Subject_Year_Serie or Subject-Year-Serie
         parts = exam_id.replace("-", "_").split("_")
-        subject = meta.get("subject", parts[0] if len(parts) > 0 else "Unknown")
+        raw_subject = meta.get("subject", parts[0] if len(parts) > 0 else "Unknown")
+        subject = self._normalize_subject(raw_subject)
         year = int(meta.get("year", parts[1] if len(parts) > 1 else 0))
         serie = meta.get("serie", parts[2] if len(parts) > 2 else "Unknown")
 
@@ -179,10 +213,12 @@ class Neo4jGraphBuilder:
 
     def _create_question_node(self, tx, exam_id: str, data: ChunkGraphData):
         """Create Question node and relationships."""
-        # Skip sub_question chunks - they create SubQuestion nodes, not Question nodes
+        # Skip sub_question and passage chunks - they create SubQuestion/Passage nodes, not Question nodes
         if not data.question_number or not data.question_type:
             return
         if data.question_type == "sub_question":
+            return
+        if data.chunk_type == "passage":
             return
 
         # Determine which section this question belongs to

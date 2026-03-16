@@ -70,9 +70,28 @@ class GraphQueryTool:
                 params = {}
 
                 if subject:
-                    # Use OR to match partial subject names (e.g., "Mathématiques" contains "Math")
-                    conditions.append("(q.exam_subject CONTAINS $subject OR $subject CONTAINS q.exam_subject)")
+                    # Normalize subject for matching: handle variations like "Histoire" vs "Hist-Geo" vs "Histoire-Géographie"
+                    # Use case-insensitive contains with normalized lowercase
+                    subject_lower = subject.lower().strip()
+                    # Map common variations
+                    subject_normalized = subject_lower
+                    if "hist" in subject_lower:
+                        subject_normalized = "histoire"
+                    elif "svt" in subject_lower:
+                        subject_normalized = "svt"
+                    elif "math" in subject_lower:
+                        subject_normalized = "math"
+                    elif "phys" in subject_lower or "chim" in subject_lower:
+                        subject_normalized = "physique"
+
+                    conditions.append(
+                        "(toLower(q.exam_subject) CONTAINS $subject_normalized "
+                        "OR toLower(q.exam_subject) CONTAINS $subject "
+                        "OR $subject_normalized CONTAINS toLower(q.exam_subject) "
+                        "OR $subject CONTAINS toLower(q.exam_subject))"
+                    )
                     params["subject"] = subject
+                    params["subject_normalized"] = subject_normalized
 
                 if year:
                     conditions.append("q.exam_year = $year")

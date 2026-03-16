@@ -55,17 +55,33 @@ class RetrieverTool:
         vectorstore = self._get_vectorstore()
 
         # Convert filters to Chroma format
+        # Use OR logic for subject matching to handle variations like "Hist-Geo" vs "Histoire-Géographie"
         chroma_filter = None
+        filter_expressions = []
+
         if filters:
-            chroma_filter = {}
             if "subject" in filters:
-                chroma_filter["subject"] = filters["subject"]
+                subject = filters["subject"]
+                # Create case-insensitive contains filter for subject
+                # Chroma uses $contains for substring matching
+                filter_expressions.append({"subject": {"$contains": subject.lower()}})
+
             if "year" in filters:
-                chroma_filter["year"] = str(filters["year"])
+                # Keep year as int for exact matching (metadata stores it as int)
+                filter_expressions.append({"year": filters["year"]})
+
             if "serie" in filters:
-                chroma_filter["serie"] = filters["serie"]
+                filter_expressions.append({"serie": {"$contains": filters["serie"].lower()}})
+
             if "chunk_type" in filters:
-                chroma_filter["chunk_type"] = filters["chunk_type"]
+                filter_expressions.append({"chunk_type": filters["chunk_type"]})
+
+            # Combine with $and if multiple filters
+            if filter_expressions:
+                if len(filter_expressions) == 1:
+                    chroma_filter = filter_expressions[0]
+                else:
+                    chroma_filter = {"$and": filter_expressions}
 
         results = vectorstore.similarity_search_with_score(
             query=query,
