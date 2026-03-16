@@ -118,7 +118,10 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         pdf = sys.argv[1]
 
-    model = "gpt-4o-mini"
+    # Default to config model
+    from app.config import get_settings
+    settings = get_settings()
+    model = settings.openai_model
     if len(sys.argv) > 2:
         model = sys.argv[2]
 

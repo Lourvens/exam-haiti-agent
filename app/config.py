@@ -90,6 +90,15 @@ class Settings(BaseSettings):
     log_retention: str = "30 days"
 
     # ===============================
+    # Neo4j Graph Database
+    # ===============================
+    neo4j_uri: str = Field(default="bolt://localhost:7687", validation_alias="NEO4J_URI")
+    neo4j_user: str = Field(default="neo4j", validation_alias="NEO4J_USER")
+    neo4j_password: Optional[str] = Field(default=None, validation_alias="NEO4J_PASSWORD")
+    neo4j_database: str = "neo4j"
+    neo4j_enabled: bool = Field(default=False, validation_alias="NEO4J_ENABLED")
+
+    # ===============================
     # Computed Properties
     # ===============================
     @property
