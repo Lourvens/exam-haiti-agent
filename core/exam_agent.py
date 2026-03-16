@@ -187,18 +187,6 @@ def create_exam_agent_graph(llm_client):
             "embed_results": []
         }
 
-    def route_search(state: ExamAgentState) -> str:
-        """Route to the appropriate search based on intent."""
-        intent = state["intent"]
-        logger.info(f"Routing to: {intent}")
-
-        if intent == "hybrid":
-            return "execute_both"
-        elif intent == "graph":
-            return "execute_graph"
-        else:
-            return "execute_embed"
-
     def execute_graph_search(state: ExamAgentState) -> ExamAgentState:
         """Execute graph search."""
         logger.info("=" * 60)
@@ -348,17 +336,14 @@ def create_exam_agent_graph(llm_client):
     # Set entry point
     graph.set_entry_point("classify_intent")
 
-    # Add edges
-    graph.add_edge("classify_intent", "route_search")
-
-    # Conditional routing
+    # Conditional routing - route directly from classify_intent based on intent
     graph.add_conditional_edges(
-        "route_search",
-        route_search,
+        "classify_intent",
+        lambda state: state["intent"],
         {
-            "execute_graph_search": "execute_graph_search",
-            "execute_embed_search": "execute_embed_search",
-            "execute_both": "execute_hybrid_search"
+            "graph": "execute_graph_search",
+            "embed": "execute_embed_search",
+            "hybrid": "execute_hybrid_search"
         }
     )
 
