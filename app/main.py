@@ -14,6 +14,9 @@ from logs_config.config import setup_logging
 # Import admin router (load_dotenv is called inside admin.py)
 from api.admin import router as admin_router
 
+# Import agent router (load_dotenv is called inside agent.py)
+from api.agent import router as agent_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -45,6 +48,9 @@ app.add_middleware(
 
 # Include admin router
 app.include_router(admin_router, prefix=settings.api_prefix)
+
+# Include agent router
+app.include_router(agent_router, prefix=settings.api_prefix)
 
 
 # Logging middleware
