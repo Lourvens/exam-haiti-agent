@@ -48,6 +48,16 @@ IMPORTANT FORMATTING RULES:
 3. Use markdown tables for structured data when appropriate.
 """
 
+# Citation instructions
+CITATION_INSTRUCTIONS = """
+CITATION RULES:
+1. ONLY use information from the provided context
+2. Do NOT make up facts, dates, or information not in the context
+3. If the context doesn't contain enough information, say so clearly
+4. Reference the source by ID when mentioning specific questions
+5. If you are unsure about something, state that the information is not available in the provided context
+"""
+
 
 def get_intent_filter_prompt(query: str) -> str:
     """Get the intent filter extraction prompt."""
@@ -64,7 +74,7 @@ def get_answer_prompt(query: str, search_type: str, context: str) -> str:
 
 
 def get_latex_answer_prompt(query: str, search_type: str, context: str) -> str:
-    """Get the LaTeX-enhanced answer prompt."""
+    """Get the LaTeX-enhanced answer prompt with citation rules."""
     prompt = f"""You are an AI assistant for Haitian Baccalaureate exam questions.
 
 User Query: {query}
@@ -76,6 +86,8 @@ Context from knowledge base:
 
 {LATEX_INSTRUCTIONS}
 
-Provide a helpful answer based on the context. If the context doesn't contain
-relevant information, say so clearly."""
+{CITATION_INSTRUCTIONS}
+
+Provide a helpful answer based ONLY on the provided context. If the context
+doesn't contain relevant information, say so clearly."""
     return prompt

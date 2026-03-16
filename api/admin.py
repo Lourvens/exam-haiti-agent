@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Query
+from fastapi.responses import FileResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from loguru import logger
 
@@ -417,3 +418,66 @@ async def list_exams(
     except Exception as e:
         logger.error(f"Failed to list exams: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to list exams: {str(e)}")
+
+
+@router.get("/pdfs/{exam_id}")
+async def get_pdf(
+    exam_id: str,
+    _: dict = Depends(get_current_user)
+):
+    """
+    Download a PDF file by exam ID.
+
+    Args:
+        exam_id: The exam ID (e.g., 'Math-NS4-2025-SMP-Graphe')
+
+    Returns:
+        PDF file
+    """
+    settings = get_settings()
+    pdf_dir = settings.pdf_storage_path
+
+    # Find PDF matching exam_id
+    pdf_files = list(pdf_dir.glob(f"*{exam_id}*.pdf"))
+
+    if not pdf_files:
+        # Try without extension
+        pdf_files = list(pdf_dir.glob(f"{exam_id}.pdf"))
+
+    if not pdf_files:
+        raise HTTPException(status_code=404, detail=f"PDF not found for exam: {exam_id}")
+
+    pdf_path = pdf_files[0]
+
+    return FileResponse(
+        path=pdf_path,
+        filename=pdf_path.name,
+        media_type="application/pdf"
+    )
+
+
+@router.get("/pdfs")
+async def list_pdfs(
+    _: dict = Depends(get_current_user)
+):
+    """
+    List all available PDF files.
+
+    Returns:
+        List of PDF files with metadata
+    """
+    settings = get_settings()
+    pdf_dir = settings.pdf_storage_path
+
+    pdfs = []
+    for pdf_file in pdf_dir.glob("*.pdf"):
+        pdfs.append({
+            "exam_id": pdf_file.stem,
+            "filename": pdf_file.name,
+            "size": pdf_file.stat().st_size
+        })
+
+    return {
+        "pdfs": pdfs,
+        "total": len(pdfs)
+    }

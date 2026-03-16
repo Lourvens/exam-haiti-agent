@@ -1,5 +1,6 @@
 """LangGraph-based exam agent for intelligent RAG."""
 
+from pathlib import Path
 from typing import TypedDict, List, Dict, Any, Optional
 from loguru import logger
 
@@ -7,7 +8,7 @@ from langgraph.graph import StateGraph, END
 from langchain_core.tools import tool
 
 from app.config import get_settings
-from core.prompts import get_intent_filter_prompt, get_answer_prompt
+from core.prompts import get_intent_filter_prompt, get_latex_answer_prompt
 
 
 # Define the state for our agent
@@ -294,7 +295,7 @@ def create_exam_agent_graph(llm_client):
         context = "\n\n".join(context_parts) if context_parts else "No results found."
 
         # Generate answer with LLM
-        answer_prompt = get_answer_prompt(query, search_type, context)
+        answer_prompt = get_latex_answer_prompt(query, search_type, context)
 
         try:
             answer = llm_client.invoke(answer_prompt)
@@ -303,24 +304,49 @@ def create_exam_agent_graph(llm_client):
             logger.error(f"LLM response generation failed: {e}")
             answer_text = f"I found {len(graph_results)} graph results and {len(embed_results)} embedding results, but had trouble generating a response."
 
-        # Collect sources
+        # Collect sources with PDF URLs
         sources = []
+
+        # Extract exam IDs from results for PDF URLs
+        exam_ids = set()
         for r in graph_results[:3]:
+            r_id = r.get("id", "")
+            # Extract exam_id from question id (e.g., "Math-NS4-2025-SMP-Graphe_PARTIE A_1" -> "Math-NS4-2025-SMP-Graphe")
+            exam_id = r_id.split("_PARTIE")[0].split("_Exercice")[0].split("_Texte")[0]
+            if exam_id:
+                exam_ids.add(exam_id)
+
             sources.append({
                 "type": "graph",
                 "id": r.get("id"),
-                "content": r.get("content", "")[:100]
+                "content": r.get("content", "")[:100],
+                "exam_id": exam_id
             })
+
         for r in embed_results[:3]:
+            meta = r.get("metadata", {})
+            source = meta.get("source", "")
+            # Extract exam_id from source path
+            if source:
+                exam_id = Path(source).stem
+                exam_ids.add(exam_id)
+            else:
+                exam_id = None
+
             sources.append({
                 "type": "embed",
-                "metadata": r.get("metadata", {})
+                "metadata": meta,
+                "exam_id": exam_id
             })
+
+        # Add PDF download URLs
+        pdf_urls = [f"/api/v1/admin/pdfs/{eid}" for eid in exam_ids if eid]
 
         return {
             **state,
             "answer": answer_text,
-            "sources": sources
+            "sources": sources,
+            "pdf_urls": pdf_urls
         }
 
     # Create the graph
