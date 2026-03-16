@@ -12,3 +12,8 @@ wheels/
 .env
 
 logs/
+
+# Data directories
+data/chroma/
+data/chunks/
+data/pdfs/
