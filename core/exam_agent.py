@@ -340,7 +340,7 @@ def create_exam_agent_graph(llm_client):
             })
 
         # Add PDF download URLs
-        pdf_urls = [f"/api/v1/admin/pdfs/{eid}" for eid in exam_ids if eid]
+        pdf_urls = [f"/api/v1/pdfs/{eid}" for eid in exam_ids if eid]
 
         return {
             **state,

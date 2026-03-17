@@ -17,6 +17,9 @@ from api.admin import router as admin_router
 # Import agent router (load_dotenv is called inside agent.py)
 from api.agent import router as agent_router
 
+# Import PDF router (public, no auth)
+from api.pdf import router as pdf_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -51,6 +54,9 @@ app.include_router(admin_router, prefix=settings.api_prefix)
 
 # Include agent router
 app.include_router(agent_router, prefix=settings.api_prefix)
+
+# Include PDF router (public, no auth)
+app.include_router(pdf_router, prefix=settings.api_prefix)
 
 
 # Logging middleware
