@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
@@ -111,7 +110,7 @@ export default function Home() {
       </header>
 
       {/* Messages */}
-      <main className="flex-1 container mx-auto max-w-4xl px-4 py-6">
+      <main className="flex-1 container mx-auto max-w-4xl px-4 py-6 pb-24">
         <div className="space-y-6">
           {messages.map((msg, i) => (
             <div
@@ -173,20 +172,27 @@ export default function Home() {
       </main>
 
       {/* Input */}
-      <footer className="border-t border-border/50 p-4">
+      <footer className="fixed bottom-0 left-0 right-0 border-t border-border/50 p-4 backdrop-blur-sm bg-background/90">
         <div className="container mx-auto max-w-4xl">
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <Input
+          <form onSubmit={handleSubmit} className="flex gap-3 items-end">
+            <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Posez votre question..."
-              className="bg-secondary/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 h-11"
+              className="flex-1 bg-secondary/50 border border-border/50 focus:border-primary/50 focus:ring-primary/20 rounded-lg px-4 py-3 text-sm resize-none disabled:opacity-50 disabled:cursor-not-allowed outline-none"
+              rows={2}
               disabled={isLoading}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit(e as unknown as React.FormEvent);
+                }
+              }}
             />
             <Button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="bg-primary hover:bg-primary/90 h-11 px-5"
+              className="bg-primary hover:bg-primary/90 h-12 px-4"
             >
               {isLoading ? (
                 <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -194,7 +200,7 @@ export default function Home() {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
               ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
               )}
