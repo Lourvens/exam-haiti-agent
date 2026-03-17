@@ -1,0 +1,177 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+/* Force dark mode */
+:root {
+  color-scheme: dark;
+}
+
+:root, .dark {
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Refined dark palette - charcoal with blue accent */
+  --background: #0d0d0f;
+  --foreground: #e8e8e8;
+  --card: #16161a;
+  --card-foreground: #e8e8e8;
+  --popover: #16161a;
+  --popover-foreground: #e8e8e8;
+  --primary: #60a5fa;
+  --primary-foreground: #0d0d0f;
+  --secondary: #1c1c21;
+  --secondary-foreground: #e8e8e8;
+  --muted: #1c1c21;
+  --muted-foreground: #71717a;
+  --accent: #27272d;
+  --accent-foreground: #e8e8e8;
+  --destructive: #f87171;
+  --border: #27272d;
+  --input: #27272d;
+  --ring: #60a5fa;
+
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+/* Markdown content styles */
+.markdown-content {
+  line-height: 1.7;
+}
+.markdown-content p {
+  margin-bottom: 0.75rem;
+}
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+.markdown-content ul,
+.markdown-content ol {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+.markdown-content li {
+  margin-bottom: 0.25rem;
+}
+.markdown-content code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+  font-family: 'JetBrains Mono', monospace;
+}
+.markdown-content pre {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+.markdown-content pre code {
+  background: transparent;
+  padding: 0;
+}
+.markdown-content blockquote {
+  border-left: 3px solid #60a5fa;
+  padding-left: 0.75rem;
+  font-style: italic;
+  color: #a1a1aa;
+  margin: 0.75rem 0;
+}
+.markdown-content table {
+  width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid #27272d;
+  padding: 0.5rem;
+  text-align: left;
+}
+.markdown-content th {
+  background: rgba(255, 255, 255, 0.05);
+  font-weight: 500;
+}
+.markdown-content hr {
+  border-color: #27272d;
+  margin: 1.5rem 0;
+}
+.markdown-content strong {
+  font-weight: 600;
+}
+.markdown-content a {
+  color: #60a5fa;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.markdown-content .katex-display {
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+.markdown-content .katex {
+  font-size: 1.1em;
+}
