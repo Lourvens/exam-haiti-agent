@@ -304,7 +304,7 @@ def create_exam_agent_graph(llm_client):
             logger.error(f"LLM response generation failed: {e}")
             answer_text = f"I found {len(graph_results)} graph results and {len(embed_results)} embedding results, but had trouble generating a response."
 
-        # Collect sources with PDF URLs
+        # Collect sources with PDF URLs (Bug 3)
         sources = []
 
         # Extract exam IDs from results for PDF URLs
@@ -320,7 +320,8 @@ def create_exam_agent_graph(llm_client):
                 "type": "graph",
                 "id": r.get("id"),
                 "content": r.get("content", "")[:100],
-                "exam_id": exam_id
+                "exam_id": exam_id,
+                "pdf_url": f"/api/v1/pdfs/{exam_id}" if exam_id else None
             })
 
         for r in embed_results[:3]:
@@ -336,7 +337,8 @@ def create_exam_agent_graph(llm_client):
             sources.append({
                 "type": "embed",
                 "metadata": meta,
-                "exam_id": exam_id
+                "exam_id": exam_id,
+                "pdf_url": f"/api/v1/pdfs/{exam_id}" if exam_id else None
             })
 
         # Add PDF download URLs

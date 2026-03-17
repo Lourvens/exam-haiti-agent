@@ -4,6 +4,40 @@ from typing import Optional, Dict, Any, List
 
 from app.config import get_settings
 
+# Subject normalization: French subject names to stored values
+SUBJECT_NORMALIZATION = {
+    "mathématiques": "Math",
+    "mathematiques": "Math",
+    "math": "Math",
+    "histoire-géographie": "Hist-Geo",
+    "histoire geographie": "Hist-Geo",
+    "hist-geo": "Hist-Geo",
+    "histoire": "Hist-Geo",
+    "hg": "Hist-Geo",
+    "sciences de la vie et de la terre": "SVT",
+    "svt": "SVT",
+    "sciences naturelles": "SVT",
+    "physique-chimie": "PC",
+    "physique": "PC",
+    "chimie": "PC",
+    "pc": "PC",
+}
+
+
+def normalize_subject(subject: str) -> Optional[str]:
+    """Normalize French subject names to stored values.
+
+    Args:
+        subject: Raw subject from query (e.g., "Mathématiques")
+
+    Returns:
+        Normalized subject (e.g., "Math") or None if not recognized
+    """
+    if not subject:
+        return None
+    subject_lower = subject.lower().strip()
+    return SUBJECT_NORMALIZATION.get(subject_lower)
+
 
 class GraphQueryTool:
     """Tool for querying the Neo4j knowledge graph."""
@@ -70,28 +104,27 @@ class GraphQueryTool:
                 params = {}
 
                 if subject:
-                    # Normalize subject for matching: handle variations like "Histoire" vs "Hist-Geo" vs "Histoire-Géographie"
-                    # Use case-insensitive contains with normalized lowercase
+                    # Normalize subject using the normalization mapping (Bug 1)
+                    normalized_subject = normalize_subject(subject)
                     subject_lower = subject.lower().strip()
-                    # Map common variations
-                    subject_normalized = subject_lower
-                    if "hist" in subject_lower:
-                        subject_normalized = "histoire"
-                    elif "svt" in subject_lower:
-                        subject_normalized = "svt"
-                    elif "math" in subject_lower:
-                        subject_normalized = "math"
-                    elif "phys" in subject_lower or "chim" in subject_lower:
-                        subject_normalized = "physique"
 
-                    conditions.append(
-                        "(toLower(q.exam_subject) CONTAINS $subject_normalized "
-                        "OR toLower(q.exam_subject) CONTAINS $subject "
-                        "OR $subject_normalized CONTAINS toLower(q.exam_subject) "
-                        "OR $subject CONTAINS toLower(q.exam_subject))"
-                    )
-                    params["subject"] = subject
-                    params["subject_normalized"] = subject_normalized
+                    # Use both original and normalized forms for matching
+                    if normalized_subject:
+                        conditions.append(
+                            "(toLower(q.exam_subject) CONTAINS $normalized_subject "
+                            "OR toLower(q.exam_subject) CONTAINS $subject "
+                            "OR $normalized_subject CONTAINS toLower(q.exam_subject) "
+                            "OR $subject CONTAINS toLower(q.exam_subject))"
+                        )
+                        params["subject"] = subject
+                        params["normalized_subject"] = normalized_subject.lower()
+                    else:
+                        # Fallback: use contains without normalization
+                        conditions.append(
+                            "(toLower(q.exam_subject) CONTAINS $subject "
+                            "OR $subject CONTAINS toLower(q.exam_subject))"
+                        )
+                        params["subject"] = subject_lower
 
                 if year:
                     conditions.append("q.exam_year = $year")

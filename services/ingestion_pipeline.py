@@ -368,6 +368,9 @@ class IngestionPipeline:
 
         final_count = vectorstore._collection.count()
 
+        # Bug 4: Sync to Neo4j after ingestion
+        self._sync_to_graph()
+
         logger.info("=" * 60)
         logger.info(f"✓ INGESTION COMPLETE")
         logger.info(f"  → Added: {len(texts)} chunks")
@@ -380,6 +383,24 @@ class IngestionPipeline:
             "chunks": len(texts),
             "total_in_collection": final_count
         }
+
+    def _sync_to_graph(self):
+        """Sync newly ingested chunks to Neo4j graph."""
+        settings = get_settings()
+
+        if not settings.neo4j_enabled:
+            logger.info("Neo4j not enabled, skipping graph sync")
+            return
+
+        try:
+            from services.graph_builder import ChromaToNeo4jSync
+
+            logger.info("Step 4: Syncing to Neo4j graph...")
+            syncer = ChromaToNeo4jSync()
+            result = syncer.sync_from_chroma()
+            logger.info(f"  → Graph sync complete: {result}")
+        except Exception as e:
+            logger.warning(f"  → Graph sync failed: {e}")
 
     def ingest_directory(
         self,
